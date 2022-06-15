@@ -7,36 +7,56 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arthenica.ffmpegkit.ReturnCode;
+import com.arthenica.ffmpegkit.Session;
+import com.bumptech.glide.Glide;
 import com.google.android.exoplayer2.util.Util;
 
 import net.vrgsoft.videcrop.cropview.window.CropVideoView;
-import net.vrgsoft.videcrop.ffmpeg.ExecuteBinaryResponseHandler;
-import net.vrgsoft.videcrop.ffmpeg.FFmpeg;
-import net.vrgsoft.videcrop.ffmpeg.FFtask;
+
 import net.vrgsoft.videcrop.player.VideoPlayer;
 import net.vrgsoft.videcrop.view.ProgressView;
 import net.vrgsoft.videcrop.view.VideoSliceSeekBarH;
 
+import com.arthenica.ffmpegkit.FFmpegKit;
+import com.jakewharton.rxrelay2.BehaviorRelay;
+import com.jakewharton.rxrelay2.Relay;
+
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Locale;
+import java.util.Random;
+
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 
 public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.OnProgressUpdateListener, VideoSliceSeekBarH.SeekBarChangeListener {
@@ -69,8 +89,9 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     private String outputPath;
     private boolean isVideoPlaying = false;
     private boolean isAspectMenuShown = false;
-    private FFtask mFFTask;
-    private FFmpeg mFFMpeg;
+    private Session ffmpegSession = null;
+    MediaMetadataRetriever retriever;
+    private CompositeDisposable disposable = new CompositeDisposable();
 
     public static Intent createIntent(Context context, String inputPath, String outputPath) {
         Intent intent = new Intent(context, VideoCropActivity.class);
@@ -106,8 +127,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case STORAGE_REQUEST: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     initPlayer(inputPath);
                 } else {
                     Toast.makeText(this, "You must grant a write storage permission to use this functionality", Toast.LENGTH_SHORT).show();
@@ -117,6 +137,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
             }
         }
     }
+
 
     @Override
     protected void onStart() {
@@ -134,23 +155,84 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
     @Override
     public void onDestroy() {
-        mVideoPlayer.release();
-        if (mFFTask != null && !mFFTask.isProcessCompleted()) {
-            mFFTask.sendQuitSignal();
-        }
-        if (mFFMpeg != null) {
-            mFFMpeg.deleteFFmpegBin();
-        }
+        disposable.dispose();
+        retriever.release();
+        if (mVideoPlayer != null) mVideoPlayer.release();
+        if (ffmpegSession != null) FFmpegKit.cancel(ffmpegSession.getSessionId());
         super.onDestroy();
     }
 
     @Override
     public void onFirstTimeUpdate(long duration, long currentPosition) {
+        loadVideoFrames((int) duration);
         mTmbProgress.setSeekBarChangeListener(this);
         mTmbProgress.setMaxValue(duration);
         mTmbProgress.setLeftProgress(0);
         mTmbProgress.setRightProgress(duration);
         mTmbProgress.setProgressMinDiff(0);
+    }
+
+    private void loadVideoFrames(int duration) {
+        // generate five images for each minutes.
+        LinearLayout imagesList = findViewById(R.id.framesList);
+        imagesList.setWeightSum(0);
+        BehaviorRelay<Integer> frameTimeRelay = BehaviorRelay.createDefault(0);
+        disposable.add(frameTimeRelay
+                .skip(1)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe((time) -> {
+                    imagesList.setWeightSum(imagesList.getWeightSum() + 1);
+                    ImageView imageView = new ImageView(this);
+                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT);
+                    params.weight = 1;
+                    imageView.setLayoutParams(params);
+                    Bitmap bitmap = retriever.getFrameAtTime(time);
+                    Glide.with(imageView).load(bitmap).into(imageView);
+                    imagesList.addView(imageView);
+                }));
+        frameTimeRelay.accept(2);
+//        disposable.add(Single.just(duration)
+//                .map((d) -> {
+//                    Random r = new Random();
+//                    List<Bitmap> framesBitmaps = new ArrayList<>();
+//                    long totalMinutes = (d / 1000L) / 60;
+//                    if (totalMinutes > 0) {
+//                        for (int i = 1; i <= totalMinutes; i++) {
+//                            int end = i * 1000;
+//                            int start = end - 1000;
+//                            for (int x = 0; x < 5; x++) {
+//                                framesBitmaps.add(retriever.getFrameAtTime(r.nextInt(end) + start));
+//                            }
+//                        }
+//                    } else {
+//                        for (int x = 0; x < 5; x++) {
+//                            framesBitmaps.add(retriever.getFrameAtTime(r.nextInt(d)));
+//                        }
+//                    }
+//                    return framesBitmaps;
+//                })
+//                .subscribeOn(Schedulers.computation())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe((bitmaps) -> {
+//                    Log.d("Minaaaa", bitmaps.size() + "");
+//                    ImageView imageView = new ImageView(this);
+//                    imageView.setLayoutParams(new LinearLayout.LayoutParams(100, ViewGroup.LayoutParams.MATCH_PARENT));
+//                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+//                    Glide.with(imageView).load(bitmaps.get(40)).into(imageView);
+//                    imagesList.addView(imageView);
+////                    for(Bitmap bitmap : bitmaps){
+////                        ImageView imageView = new ImageView(this);
+////                        imageView.setLayoutParams(new LinearLayout.LayoutParams(10, ViewGroup.LayoutParams.MATCH_PARENT));
+////                        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+////                        Glide.with(imageView).load(bitmap).into(imageView);
+////                        imagesList.addView(imageView);
+////                    }
+//
+//                }, (e) -> {
+//                    Log.d("VideoCrop", "Error");
+//                    Log.d(this.getClass().getSimpleName(), e.getLocalizedMessage());
+//                }));
     }
 
     @Override
@@ -164,10 +246,6 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
         mTmbProgress.setSliceBlocked(false);
         mTmbProgress.removeVideoStatusThumb();
-
-//        mTmbProgress.setPosition(currentPosition);
-//        mTmbProgress.setBufferedPosition(bufferedPosition);
-//        mTmbProgress.setDuration(duration);
     }
 
     private void findViews() {
@@ -190,24 +268,11 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     }
 
     private void initListeners() {
-        mIvPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playPause();
-            }
-        });
-        mIvAspectRatio.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleMenuVisibility();
-            }
-        });
-        mTvAspectCustom.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mCropVideoView.setFixedAspectRatio(false);
-                handleMenuVisibility();
-            }
+        mIvPlay.setOnClickListener(v -> playPause());
+        mIvAspectRatio.setOnClickListener(v -> handleMenuVisibility());
+        mTvAspectCustom.setOnClickListener(v -> {
+            mCropVideoView.setFixedAspectRatio(false);
+            handleMenuVisibility();
         });
         mTvAspectSquare.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -217,21 +282,15 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
                 handleMenuVisibility();
             }
         });
-        mTvAspectPortrait.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mCropVideoView.setFixedAspectRatio(true);
-                mCropVideoView.setAspectRatio(8, 16);
-                handleMenuVisibility();
-            }
+        mTvAspectPortrait.setOnClickListener(v -> {
+            mCropVideoView.setFixedAspectRatio(true);
+            mCropVideoView.setAspectRatio(8, 16);
+            handleMenuVisibility();
         });
-        mTvAspectLandscape.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mCropVideoView.setFixedAspectRatio(true);
-                mCropVideoView.setAspectRatio(16, 8);
-                handleMenuVisibility();
-            }
+        mTvAspectLandscape.setOnClickListener(v -> {
+            mCropVideoView.setFixedAspectRatio(true);
+            mCropVideoView.setAspectRatio(16, 8);
+            handleMenuVisibility();
         });
         mTvAspect4by3.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -249,12 +308,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
                 handleMenuVisibility();
             }
         });
-        mIvDone.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleCropStart();
-            }
-        });
+        mIvDone.setOnClickListener(v -> handleCropStart());
     }
 
     private void playPause() {
@@ -285,17 +339,19 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         mVideoPlayer.initMediaSource(this, uri);
         mVideoPlayer.setUpdateListener(this);
 
+
         fetchVideoInfo(uri);
     }
 
     private void fetchVideoInfo(String uri) {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        retriever = new MediaMetadataRetriever();
         retriever.setDataSource(new File(uri).getAbsolutePath());
-        int videoWidth = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-        int videoHeight = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-        int rotationDegrees = Integer.valueOf(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
+        int videoWidth = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+        int videoHeight = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+        int rotationDegrees = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION));
 
         mCropVideoView.initBounds(videoWidth, videoHeight, rotationDegrees);
+
     }
 
     private void handleMenuVisibility() {
@@ -314,10 +370,8 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     }
 
     private void requestStoragePermission() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_REQUEST);
+        if ((ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) || (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, STORAGE_REQUEST);
         } else {
             initPlayer(inputPath);
         }
@@ -332,70 +386,31 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         String duration = Util.getStringForTime(formatBuilder, formatter, durationCrop);
         start += "." + startCrop % 1000;
         duration += "." + durationCrop % 1000;
+        String crop = String.format("crop=%d:%d:%d:%d:exact=0", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
+        String command = String.format("-y -ss %s -i %s -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
+        mProgressBar.setVisibility(View.VISIBLE);
+        mIvDone.setEnabled(false);
+        mIvPlay.setEnabled(false);
+        mIvAspectRatio.setEnabled(false);
 
-        mFFMpeg = FFmpeg.getInstance(this);
-        if (mFFMpeg.isSupported()) {
-            String crop = String.format("crop=%d:%d:%d:%d:exact=0", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
-            String[] cmd = {
-                    "-y",
-                    "-ss",
-                    start,
-                    "-i",
-                    inputPath,
-                    "-t",
-                    duration,
-                    "-vf",
-                    crop,
-                    outputPath
-            };
+        ffmpegSession = FFmpegKit.executeAsync(command, session -> {
+            if (ReturnCode.isSuccess(session.getReturnCode())) {
+                mProgressBar.setVisibility(View.INVISIBLE);
+                setResult(RESULT_OK);
+                finish();
 
-            mFFTask = mFFMpeg.execute(cmd, new ExecuteBinaryResponseHandler() {
-                @Override
-                public void onSuccess(String message) {
-                    setResult(RESULT_OK);
-                    Log.e("onSuccess", message);
-                    finish();
-                }
+            } else if (ReturnCode.isCancel(session.getReturnCode())) {
+                mProgressBar.setVisibility(View.INVISIBLE);
+                mIvDone.setEnabled(true);
+                mIvPlay.setEnabled(true);
+            } else {
+                mProgressBar.setVisibility(View.INVISIBLE);
+                mIvDone.setEnabled(true);
+                mIvPlay.setEnabled(true);
+                Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
+            }
+        });
 
-                @Override
-                public void onProgress(String message) {
-                    Log.e("onProgress", message);
-                }
-
-                @Override
-                public void onFailure(String message) {
-                    Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
-                    Log.e("onFailure", message);
-                }
-
-                @Override
-                public void onProgressPercent(float percent) {
-                    mProgressBar.setProgress((int) percent);
-                    mTvCropProgress.setText((int) percent + "%");
-                }
-
-                @Override
-                public void onStart() {
-                    mIvDone.setEnabled(false);
-                    mIvPlay.setEnabled(false);
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    mProgressBar.setProgress(0);
-                    mTvCropProgress.setVisibility(View.VISIBLE);
-                    mTvCropProgress.setText("0%");
-                }
-
-                @Override
-                public void onFinish() {
-                    mIvDone.setEnabled(true);
-                    mIvPlay.setEnabled(true);
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mProgressBar.setProgress(0);
-                    mTvCropProgress.setVisibility(View.INVISIBLE);
-                    mTvCropProgress.setText("0%");
-                    Toast.makeText(VideoCropActivity.this, "FINISHED", Toast.LENGTH_SHORT).show();
-                }
-            }, durationCrop * 1.0f / 1000);
-        }
     }
 
     @Override

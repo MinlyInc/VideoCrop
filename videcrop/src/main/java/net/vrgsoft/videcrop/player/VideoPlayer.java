@@ -46,7 +46,6 @@ public class VideoPlayer implements Player.Listener, TimeBar.OnScrubListener {
     }
 
     public void play(boolean play) {
-        player.play(); // TODO remove ...
         player.setPlayWhenReady(play);
         if (!play) {
             removeUpdater();

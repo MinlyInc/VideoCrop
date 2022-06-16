@@ -4,9 +4,18 @@
     <color name="black_translucent">#B0000000</color>
 
     <color name="border">@color/white_translucent</color>
+    <color name="trimmer_bg">#00FFFFFF</color>
+    <color name="slider_mask_color">#AD434242</color>
+    <color name="slider_line_color">#434242</color>
     <color name="guideline">@color/white_translucent</color>
     <color name="corner">@android:color/white</color>
     <color name="surrounding_area">@color/black_translucent</color>
     <color name="lighter_gray">#eeeeee</color>
     <color name="txt_color">#3b3b3b</color>
+    <!--number view-->
+    <color name="theme_content">#64646C</color>
+    <color name="white_gradient_start">#D5D5D7</color>
+    <color name="white_gradient_end">@color/theme_content</color>
+    <color name="text_color">#373636</color>
+    <!--number view-->
 </resources>

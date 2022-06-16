@@ -8,8 +8,18 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="videcrop/src/main/res/drawable/ic_baseline_close.xml" value="0.343" />
+        <entry key="videcrop/src/main/res/drawable/ic_baseline_keyboard_arrow_left.xml" value="0.3085" />
+        <entry key="videcrop/src/main/res/drawable/ic_check.xml" value="0.206" />
+        <entry key="videcrop/src/main/res/drawable/ic_pause.xml" value="0.407" />
+        <entry key="videcrop/src/main/res/drawable/ic_play.xml" value="0.206" />
+        <entry key="videcrop/src/main/res/drawable/shape_play_puse_background.xml" value="0.407" />
+        <entry key="videcrop/src/main/res/drawable/shape_slider_bg.xml" value="0.3525" />
+        <entry key="videcrop/src/main/res/drawable/shape_time_bg.xml" value="0.619" />
         <entry key="videcrop/src/main/res/layout/activity_crop.xml" value="0.315625" />
-        <entry key="videcrop/src/main/res/layout/view_crop.xml" value="0.7526041666666666" />
+        <entry key="videcrop/src/main/res/layout/media_view_half_touch_layout.xml" value="0.7526041666666666" />
+        <entry key="videcrop/src/main/res/layout/view_aspect_ratio_menu.xml" value="0.6286458333333333" />
+        <entry key="videcrop/src/main/res/layout/view_crop.xml" value="0.1" />
       </map>
     </option>
   </component>

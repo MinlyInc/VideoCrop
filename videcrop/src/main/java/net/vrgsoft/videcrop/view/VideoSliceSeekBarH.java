@@ -1,5 +1,6 @@
 package net.vrgsoft.videcrop.view;
 
+import android.app.usage.UsageEvents;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import androidx.appcompat.widget.AppCompatImageView;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import net.vrgsoft.videcrop.R;
@@ -22,25 +24,28 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
     private Paint paint = new Paint();
     private Paint paintThumb = new Paint();
     private int progressBottom;
-    private int progressColor = getResources().getColor(android.R.color.black);
+    private int progressColor = getResources().getColor(R.color.slider_mask_color);
     private int progressHalfHeight = 3;
-    private int progressMinDiff = 15;
+    private int progressMinDiff = 0;
     private int progressMinDiffPixels;
     private int progressTop;
     private SeekBarChangeListener scl;
-    private int secondaryProgressColor = getResources().getColor(R.color.txt_color);
+    private int secondaryProgressColor = getResources().getColor(R.color.trimmer_bg);
     private int selectedThumb;
     private Bitmap thumbCurrentVideoPosition = BitmapFactory.decodeResource(getResources(), R.drawable.ic_thumb_3);
     private int thumbCurrentVideoPositionHalfWidth;
     private int thumbCurrentVideoPositionX;
     private int thumbCurrentVideoPositionY;
-    private int thumbPadding = getResources().getDimensionPixelOffset(R.dimen.default_margin);
+    private int thumbPadding = 0;
     private Bitmap thumbSlice = BitmapFactory.decodeResource(getResources(), R.drawable.ic_thumb_3);
     private int thumbSliceHalfWidth;
+
     private long thumbSliceLeftValue;
     private int thumbSliceLeftX;
+
     private long thumbSliceRightValue;
     private int thumbSliceRightX;
+
     private int thumbSliceY;
     private Bitmap thumbSlicer = BitmapFactory.decodeResource(getResources(), R.drawable.ic_thumb_3);
 
@@ -68,9 +73,7 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
     }
 
     private void init() {
-        if (this.thumbSlice.getHeight() > getHeight()) {
-            getLayoutParams().height = this.thumbSlice.getHeight();
-        }
+        if (this.thumbSlice.getHeight() > getHeight()) { getLayoutParams().height = this.thumbSlice.getHeight(); }
         this.thumbSliceY = (getHeight() / 2) - (this.thumbSlice.getHeight() / 2);
         this.thumbCurrentVideoPositionY = (getHeight() / 2) - (this.thumbCurrentVideoPosition.getHeight() / 2);
         this.thumbSliceHalfWidth = this.thumbSlice.getWidth() / 2;
@@ -82,6 +85,7 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
         this.progressMinDiffPixels = calculateCorrds(this.progressMinDiff) - (this.thumbPadding * 2);
         this.progressTop = (getHeight() / 2) - this.progressHalfHeight;
         this.progressBottom = (getHeight() / 2) + this.progressHalfHeight;
+
         invalidate();
     }
 
@@ -92,24 +96,24 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         this.paint.setColor(this.progressColor);
-        canvas.drawRect(new Rect(this.thumbPadding, this.progressTop, this.thumbSliceLeftX, this.progressBottom), this.paint);
-        canvas.drawRect(new Rect(this.thumbSliceRightX, this.progressTop, getWidth() - this.thumbPadding, this.progressBottom), this.paint);
+        canvas.drawRect(this.thumbPadding, 0, this.thumbSliceLeftX, 200, this.paint);
+        canvas.drawRect(this.thumbSliceRightX, 0, getWidth() - this.thumbPadding, 200, this.paint);
+
         this.paint.setColor(this.secondaryProgressColor);
-        canvas.drawRect(new Rect(this.thumbSliceLeftX, this.progressTop, this.thumbSliceRightX, this.progressBottom), this.paint);
+        canvas.drawRect(this.thumbSliceLeftX, 0, this.thumbSliceRightX, 200, this.paint);
         if (!this.blocked) {
             canvas.drawBitmap(this.thumbSlice, (float) (this.thumbSliceLeftX - this.thumbSliceHalfWidth), (float) this.thumbSliceY, this.paintThumb);
             canvas.drawBitmap(this.thumbSlicer, (float) (this.thumbSliceRightX - this.thumbSliceHalfWidth), (float) this.thumbSliceY, this.paintThumb);
         }
-        if (this.isVideoStatusDisplay) {
-            canvas.drawBitmap(this.thumbCurrentVideoPosition, (float) (this.thumbCurrentVideoPositionX - this.thumbCurrentVideoPositionHalfWidth), (float) this.thumbCurrentVideoPositionY, this.paintThumb);
-        }
+//        if (this.isVideoStatusDisplay) {
+//            canvas.drawBitmap(this.thumbCurrentVideoPosition, (float) (this.thumbCurrentVideoPositionX - this.thumbCurrentVideoPositionHalfWidth), (float) this.thumbCurrentVideoPositionY, this.paintThumb);
+//        }
     }
 
     public boolean onTouchEvent(MotionEvent event) {
-        if (!this.blocked) {
             int mx = (int) event.getX();
             switch (event.getAction()) {
-                case 0:
+                case MotionEvent.ACTION_DOWN:
                     if ((mx < this.thumbSliceLeftX - this.thumbSliceHalfWidth || mx > this.thumbSliceLeftX + this.thumbSliceHalfWidth) && mx >= this.thumbSliceLeftX - this.thumbSliceHalfWidth) {
                         if ((mx < this.thumbSliceRightX - this.thumbSliceHalfWidth || mx > this.thumbSliceRightX + this.thumbSliceHalfWidth) && mx <= this.thumbSliceRightX + this.thumbSliceHalfWidth) {
                             if ((mx - this.thumbSliceLeftX) + this.thumbSliceHalfWidth >= (this.thumbSliceRightX - this.thumbSliceHalfWidth) - mx) {
@@ -126,10 +130,10 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
                     }
                     this.selectedThumb = 1;
                     break;
-                case 1:
+                case MotionEvent.ACTION_UP:
                     this.selectedThumb = 0;
                     break;
-                case 2:
+                case MotionEvent.ACTION_MOVE:
                     if ((mx <= (this.thumbSliceLeftX + this.thumbSliceHalfWidth) + 0 && this.selectedThumb == 2) || (mx >= (this.thumbSliceRightX - this.thumbSliceHalfWidth) + 0 && this.selectedThumb == 1)) {
                         this.selectedThumb = 0;
                     }
@@ -143,7 +147,6 @@ public class VideoSliceSeekBarH extends AppCompatImageView {
                     break;
             }
             notifySeekBarValueChanged();
-        }
         return true;
     }
 

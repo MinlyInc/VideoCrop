@@ -25,15 +25,19 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.arthenica.ffmpegkit.ReturnCode;
 import com.arthenica.ffmpegkit.Session;
 import com.bumptech.glide.Glide;
 import com.google.android.exoplayer2.util.Util;
+
 import net.vrgsoft.videcrop.cropview.window.CropVideoView;
 import net.vrgsoft.videcrop.player.VideoPlayer;
 import net.vrgsoft.videcrop.view.ProgressView;
 import net.vrgsoft.videcrop.view.rangeslider.VideoRangeSeekBar;
+
 import com.arthenica.ffmpegkit.FFmpegKit;
+
 import java.io.File;
 import java.util.Formatter;
 import java.util.Locale;
@@ -187,7 +191,9 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
     @Override
     public void onProgressUpdate(long currentPosition, long duration, long bufferedPosition) {
-        if(mVideoPlayer.isPlaying()) {preview.setVisibility(View.GONE);}
+        if (mVideoPlayer.isPlaying()) {
+            preview.setVisibility(View.GONE);
+        }
         long value2 = (long) (videoRangeSeekBar.getRightProgress() * ((float) totalDuration));
 
         if (!mVideoPlayer.isPlaying() || currentPosition >= value2) {
@@ -264,7 +270,6 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
     @SuppressLint("DefaultLocale")
     private void handleCropStart() {
-        Toast.makeText(this, "Hello ", Toast.LENGTH_SHORT).show();
         Rect cropRect = mCropVideoView.getCropRect();
         long startCrop = (long) (videoRangeSeekBar.getLeftProgress() * ((float) totalDuration));
         long durationCrop = (long) (videoRangeSeekBar.getRightProgress() * ((float) totalDuration)) - startCrop;
@@ -274,25 +279,30 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         duration += "." + durationCrop % 1000;
         String crop = String.format("crop=%d:%d:%d:%d", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
         String command = String.format("-y -ss %s -i %s -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
-//        mProgressBar.setVisibility(View.VISIBLE);
-//        mIvDone.setEnabled(false);
-//        mIvPlay.setEnabled(false);
+        mProgressBar.setVisibility(View.VISIBLE);
+        mIvDone.setEnabled(false);
+        mIvPlay.setEnabled(false);
 
         ffmpegSession = FFmpegKit.executeAsync(command, session -> {
             if (ReturnCode.isSuccess(session.getReturnCode())) {
-//                mProgressBar.setVisibility(View.INVISIBLE);
-                setResult(RESULT_OK);
-                finish();
-
+                runOnUiThread(() -> {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                    setResult(RESULT_OK);
+                    finish();
+                });
             } else if (ReturnCode.isCancel(session.getReturnCode())) {
-//                mProgressBar.setVisibility(View.INVISIBLE);
-//                mIvDone.setEnabled(true);
-//                mIvPlay.setEnabled(true);
+                runOnUiThread(() -> {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                    mIvDone.setEnabled(true);
+                    mIvPlay.setEnabled(true);
+                });
             } else {
-//                mProgressBar.setVisibility(View.INVISIBLE);
-//                mIvDone.setEnabled(true);
-//                mIvPlay.setEnabled(true);
-//                Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
+                runOnUiThread(() -> {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                    mIvDone.setEnabled(true);
+                    mIvPlay.setEnabled(true);
+                    Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
+                });
             }
         });
 

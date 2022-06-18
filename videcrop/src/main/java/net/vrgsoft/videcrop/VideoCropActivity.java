@@ -23,6 +23,7 @@ import androidx.window.layout.WindowMetricsCalculator;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,7 +59,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     private CropVideoView mCropVideoView;
     private TextView mTvDuration;
     private ImageView preview;
-    private ProgressView mProgressBar;
+    private ProgressBar mProgressBar;
 
     private String inputPath;
     private String outputPath;
@@ -280,6 +281,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         String crop = String.format("crop=%d:%d:%d:%d", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
         String command = String.format("-y -ss %s -i %s -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
         mProgressBar.setVisibility(View.VISIBLE);
+        mIvPlay.setVisibility(View.INVISIBLE);
         mIvDone.setEnabled(false);
         mIvPlay.setEnabled(false);
 
@@ -287,18 +289,21 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
             if (ReturnCode.isSuccess(session.getReturnCode())) {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
+                    mIvPlay.setVisibility(View.VISIBLE);
                     setResult(RESULT_OK);
                     finish();
                 });
             } else if (ReturnCode.isCancel(session.getReturnCode())) {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
+                    mIvPlay.setVisibility(View.VISIBLE);
                     mIvDone.setEnabled(true);
                     mIvPlay.setEnabled(true);
                 });
             } else {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
+                    mIvPlay.setVisibility(View.VISIBLE);
                     mIvDone.setEnabled(true);
                     mIvPlay.setEnabled(true);
                     Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();

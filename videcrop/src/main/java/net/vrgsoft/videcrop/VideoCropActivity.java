@@ -71,7 +71,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     private int aspectRatioX = 10;
     private int aspectRatioY = 10;
     private float maximumDuration = 10000f;
-    private float minmumDuration = 5000f;
+    private float minmumDuration = 3000f;
     private WindowMetrics windowMetrics;
 
     public static Intent createIntent(Context context, String inputPath, String outputPath) {

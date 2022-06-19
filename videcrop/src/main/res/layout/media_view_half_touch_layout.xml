@@ -6,8 +6,7 @@
         android:layout_width="16dp"
         android:layout_height="16dp"
         android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp"
-        android:src="@drawable/ic_minus" />
+        android:layout_marginRight="6dp" />
 
     <View
         android:id="@+id/left_divider"
@@ -43,8 +42,7 @@
         android:layout_width="16dp"
         android:layout_height="16dp"
         android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp"
-        android:src="@drawable/ic_plus" />
+        android:layout_marginRight="6dp" />
 
 
 </merge>

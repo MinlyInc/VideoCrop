@@ -27,8 +27,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.arthenica.ffmpegkit.ReturnCode;
-import com.arthenica.ffmpegkit.Session;
+import com.arthenica.mobileffmpeg.ExecuteCallback;
+import com.arthenica.mobileffmpeg.FFmpeg;
 import com.bumptech.glide.Glide;
 import com.google.android.exoplayer2.util.Util;
 
@@ -36,8 +36,6 @@ import net.vrgsoft.videcrop.cropview.window.CropVideoView;
 import net.vrgsoft.videcrop.player.VideoPlayer;
 import net.vrgsoft.videcrop.view.ProgressView;
 import net.vrgsoft.videcrop.view.rangeslider.VideoRangeSeekBar;
-
-import com.arthenica.ffmpegkit.FFmpegKit;
 
 import java.io.File;
 import java.util.Formatter;
@@ -48,6 +46,10 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     private static final String VIDEO_CROP_INPUT_PATH = "VIDEO_CROP_INPUT_PATH";
     private static final String VIDEO_CROP_OUTPUT_PATH = "VIDEO_CROP_OUTPUT_PATH";
     private static final int STORAGE_REQUEST = 100;
+
+    // ffmpeg return codes
+    private static final int RETURN_CODE_SUCCESS = 0;
+    private static final int RETURN_CODE_CANCEL = 255;
 
     private VideoPlayer mVideoPlayer;
     private StringBuilder formatBuilder;
@@ -64,7 +66,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     private String inputPath;
     private String outputPath;
     private boolean isVideoPlaying = false;
-    private Session ffmpegSession = null;
+    private long ffmpegSessionId = -1;
     MediaMetadataRetriever retriever;
 
     private long totalDuration = 0;
@@ -144,7 +146,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     public void onDestroy() {
         if (retriever != null) retriever.release();
         if (mVideoPlayer != null) mVideoPlayer.release();
-        if (ffmpegSession != null) FFmpegKit.cancel(ffmpegSession.getSessionId());
+        if (ffmpegSessionId >= 0) FFmpeg.cancel(ffmpegSessionId);
         super.onDestroy();
     }
 
@@ -285,22 +287,24 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         mIvDone.setEnabled(false);
         mIvPlay.setEnabled(false);
 
-        ffmpegSession = FFmpegKit.executeAsync(command, session -> {
-            if (ReturnCode.isSuccess(session.getReturnCode())) {
+        ffmpegSessionId = FFmpeg.executeAsync(command, new ExecuteCallback() {
+            @Override
+            public void apply(final long executionId, final int returnCode) {
+                if (returnCode == RETURN_CODE_SUCCESS) {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
                     mIvPlay.setVisibility(View.VISIBLE);
                     setResult(RESULT_OK);
                     finish();
                 });
-            } else if (ReturnCode.isCancel(session.getReturnCode())) {
+                } else if (returnCode == RETURN_CODE_CANCEL) {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
                     mIvPlay.setVisibility(View.VISIBLE);
                     mIvDone.setEnabled(true);
                     mIvPlay.setEnabled(true);
                 });
-            } else {
+                } else {
                 runOnUiThread(() -> {
                     mProgressBar.setVisibility(View.INVISIBLE);
                     mIvPlay.setVisibility(View.VISIBLE);
@@ -308,6 +312,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
                     mIvPlay.setEnabled(true);
                     Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
                 });
+                }
             }
         });
 

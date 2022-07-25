@@ -281,7 +281,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         start += "." + startCrop % 1000;
         duration += "." + durationCrop % 1000;
         String crop = String.format("crop=%d:%d:%d:%d", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
-        String command = String.format("-y -ss %s -i %s -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
+        String command = String.format("-y -ss %s -i \"%s\" -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
         mProgressBar.setVisibility(View.VISIBLE);
         mIvPlay.setVisibility(View.INVISIBLE);
         mIvDone.setEnabled(false);

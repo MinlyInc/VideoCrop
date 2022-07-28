@@ -57,6 +57,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
     private AppCompatImageView mIvPlay;
     private AppCompatImageView mIvDone;
+    private AppCompatImageView close;
     private VideoRangeSeekBar videoRangeSeekBar;
     private CropVideoView mCropVideoView;
     private TextView mTvDuration;
@@ -215,10 +216,12 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         mTvDuration = findViewById(R.id.tvDuration);
         videoRangeSeekBar = findViewById(R.id.videoRangeSeekBar);
         mProgressBar = findViewById(R.id.pbCropProgress);
+        close = findViewById(R.id.close);
     }
 
     private void initListeners() {
         mIvPlay.setOnClickListener(v -> playPause());
+        close.setOnClickListener(v -> finish());
         mIvDone.setOnClickListener(v -> handleCropStart());
     }
 

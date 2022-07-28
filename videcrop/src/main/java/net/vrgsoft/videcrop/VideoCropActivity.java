@@ -38,6 +38,7 @@ import net.vrgsoft.videcrop.view.ProgressView;
 import net.vrgsoft.videcrop.view.rangeslider.VideoRangeSeekBar;
 
 import java.io.File;
+import java.text.NumberFormat;
 import java.util.Formatter;
 import java.util.Locale;
 
@@ -90,7 +91,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         setContentView(R.layout.activity_crop);
 
         formatBuilder = new StringBuilder();
-        formatter = new Formatter(formatBuilder, Locale.getDefault());
+        formatter = new Formatter(formatBuilder, Locale.ENGLISH);
 
         inputPath = getIntent().getStringExtra(VIDEO_CROP_INPUT_PATH);
         outputPath = getIntent().getStringExtra(VIDEO_CROP_OUTPUT_PATH);
@@ -284,7 +285,7 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
         start += "." + startCrop % 1000;
         duration += "." + durationCrop % 1000;
         String crop = String.format("crop=%d:%d:%d:%d", cropRect.right, cropRect.bottom, cropRect.left, cropRect.top);
-        String command = String.format("-y -ss %s -i \"%s\" -t %s -vf \"%s\" %s", start, inputPath, duration, crop, outputPath);
+        String command = String.format("-y -ss %s -i \"%s\" -t %s -vf \"%s\" %s", start, inputPath, duration, ArabicToEnglish(crop), outputPath);
         mProgressBar.setVisibility(View.VISIBLE);
         mIvPlay.setVisibility(View.INVISIBLE);
         mIvDone.setEnabled(false);
@@ -294,31 +295,44 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
             @Override
             public void apply(final long executionId, final int returnCode) {
                 if (returnCode == RETURN_CODE_SUCCESS) {
-                runOnUiThread(() -> {
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mIvPlay.setVisibility(View.VISIBLE);
-                    setResult(RESULT_OK);
-                    finish();
-                });
+                    runOnUiThread(() -> {
+                        mProgressBar.setVisibility(View.INVISIBLE);
+                        mIvPlay.setVisibility(View.VISIBLE);
+                        setResult(RESULT_OK);
+                        finish();
+                    });
                 } else if (returnCode == RETURN_CODE_CANCEL) {
-                runOnUiThread(() -> {
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mIvPlay.setVisibility(View.VISIBLE);
-                    mIvDone.setEnabled(true);
-                    mIvPlay.setEnabled(true);
-                });
+                    runOnUiThread(() -> {
+                        mProgressBar.setVisibility(View.INVISIBLE);
+                        mIvPlay.setVisibility(View.VISIBLE);
+                        mIvDone.setEnabled(true);
+                        mIvPlay.setEnabled(true);
+                    });
                 } else {
-                runOnUiThread(() -> {
-                    mProgressBar.setVisibility(View.INVISIBLE);
-                    mIvPlay.setVisibility(View.VISIBLE);
-                    mIvDone.setEnabled(true);
-                    mIvPlay.setEnabled(true);
-                    Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
-                });
+                    runOnUiThread(() -> {
+                        mProgressBar.setVisibility(View.INVISIBLE);
+                        mIvPlay.setVisibility(View.VISIBLE);
+                        mIvDone.setEnabled(true);
+                        mIvPlay.setEnabled(true);
+                        Toast.makeText(VideoCropActivity.this, "Failed to crop!", Toast.LENGTH_SHORT).show();
+                    });
                 }
             }
         });
 
+    }
+
+    private String ArabicToEnglish(String str) {
+        return str.replace("٠","0")
+                .replace("١","1")
+                .replace("٢","2")
+                .replace("٣","3")
+                .replace("٤","4")
+                .replace("٥","5")
+                .replace("٦","6")
+                .replace("٧","7")
+                .replace("٨","8")
+                .replace("٩","9");
     }
 
 }

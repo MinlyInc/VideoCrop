@@ -141,7 +141,9 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
     @Override
     public void onStop() {
         super.onStop();
-        mVideoPlayer.play(false);
+        if (mVideoPlayer != null) {
+            mVideoPlayer.play(false);
+        }
     }
 
     @Override

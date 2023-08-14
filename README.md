@@ -30,3 +30,8 @@ startActivityForResult(VideoCropActivity.createIntent(this, inputPath, outputPat
 #### Contributing
 * Contributions are always welcome
 * If you want a feature and can code, feel free to fork and add the change yourself and make a pull request
+
+#### Produce a bundle file
+* Push the changes you want to implement in the new bundle. Preferably use the desired bundle name as the commit message.
+* Create a tag using this commit and push it following this guide: https://linuxhint.com/push-git-tags-to-remote-repository/#:~:text=To%20push%20Git%20tags%20to%20the%20remote%20repository%2C%20first%2C%20open,tag%2Dname%3E%E2%80%9D%20command
+* This website: https://jitpack.io/#MinlyInc/VideoCrop can be used to search for and view the different versions of the bundle.

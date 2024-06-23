@@ -1,8 +1,10 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
 
 android {
     compileSdk 34
-
 
     defaultConfig {
         minSdkVersion 24
@@ -21,6 +23,10 @@ android {
         }
     }
     namespace 'net.vrgsoft.videcrop'
+
+    publishing {
+        singleVariant('release')
+    }
 }
 
 dependencies {
@@ -40,4 +46,17 @@ dependencies {
     implementation 'androidx.window:window:1.3.0'
 
 
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = 'net.vrgsoft'
+                artifactId = 'videcrop'
+                version = '1.1.3'
+                from components.findByName('release')
+            }
+        }
+    }
 }

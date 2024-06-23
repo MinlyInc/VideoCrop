@@ -13,10 +13,12 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
+import androidx.media3.common.util.UnstableApi;
 import androidx.window.layout.WindowMetrics;
 import androidx.window.layout.WindowMetricsCalculator;
 
@@ -30,19 +32,19 @@ import android.widget.Toast;
 import com.arthenica.mobileffmpeg.ExecuteCallback;
 import com.arthenica.mobileffmpeg.FFmpeg;
 import com.bumptech.glide.Glide;
-import com.google.android.exoplayer2.util.Util;
+import androidx.media3.common.util.Util;
 
 import net.vrgsoft.videcrop.cropview.window.CropVideoView;
 import net.vrgsoft.videcrop.player.VideoPlayer;
-import net.vrgsoft.videcrop.view.ProgressView;
 import net.vrgsoft.videcrop.view.rangeslider.VideoRangeSeekBar;
 
 import java.io.File;
-import java.text.NumberFormat;
+import java.io.IOException;
 import java.util.Formatter;
 import java.util.Locale;
 
 
+@OptIn(markerClass = UnstableApi.class)
 public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.OnProgressUpdateListener {
     private static final String VIDEO_CROP_INPUT_PATH = "VIDEO_CROP_INPUT_PATH";
     private static final String VIDEO_CROP_OUTPUT_PATH = "VIDEO_CROP_OUTPUT_PATH";
@@ -148,7 +150,12 @@ public class VideoCropActivity extends AppCompatActivity implements VideoPlayer.
 
     @Override
     public void onDestroy() {
-        if (retriever != null) retriever.release();
+        if (retriever != null) {
+            try {
+                retriever.release();
+            } catch (IOException ignored) {
+            }
+        }
         if (mVideoPlayer != null) mVideoPlayer.release();
         if (ffmpegSessionId >= 0) FFmpeg.cancel(ffmpegSessionId);
         super.onDestroy();

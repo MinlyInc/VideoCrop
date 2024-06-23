@@ -58,7 +58,11 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 500){
             if (resultCode == Activity.RESULT_OK){
                 if (data.getData() != null) {
-                    in = new File( parsePath(data.getData()));
+                    String parsedPath = parsePath(data.getData());
+                    if (parsedPath == null) {
+                        return;
+                    }
+                    in = new File(parsedPath);
                     out = new File(Environment.getExternalStorageDirectory(), "minlyCam/videos/"+ System.currentTimeMillis() +".mp4");
                     startActivityForResult(VideoCropActivity.createIntent(this, in.getPath(), out.getPath()), CROP_REQUEST);
 

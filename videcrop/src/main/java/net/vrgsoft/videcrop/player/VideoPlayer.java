@@ -1,23 +1,26 @@
 package net.vrgsoft.videcrop.player;
 
+import static androidx.media3.common.C.TIME_UNSET;
+
 import android.content.Context;
 import android.os.Handler;
 
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 
-import com.google.android.exoplayer2.ui.TimeBar;
-import com.google.android.exoplayer2.upstream.FileDataSource;
-import com.google.android.exoplayer2.video.VideoSize;
+import androidx.annotation.OptIn;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.common.Timeline;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.FileDataSource;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.ui.TimeBar;
 
-import static com.google.android.exoplayer2.C.TIME_UNSET;
-
+@OptIn(markerClass = UnstableApi.class)
 public class VideoPlayer implements Player.Listener, TimeBar.OnScrubListener {
 
     private ExoPlayer player;

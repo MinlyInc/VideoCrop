@@ -14,7 +14,7 @@ public final class HandleUtil {
     }
 
     public static float getTargetRadius(Context context) {
-        float targetRadius = TypedValue.applyDimension(1, 24.0F, context.getResources().getDisplayMetrics());
+        float targetRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24.0F, context.getResources().getDisplayMetrics());
         return targetRadius;
     }
 

@@ -192,14 +192,14 @@ public class CropView extends View {
     private void init(Context context) {
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         mHandleRadius = HandleUtil.getTargetRadius(context);
-        mSnapRadius = TypedValue.applyDimension(1, 6.0F, displayMetrics);
+        mSnapRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 6.0F, displayMetrics);
         mBorderPaint = PaintUtil.newBorderPaint(context);
         mGuidelinePaint = PaintUtil.newGuidelinePaint();
         mBackgroundPaint = PaintUtil.newBackgroundPaint(context);
         mCornerPaint = PaintUtil.newCornerPaint(context);
-        mCornerOffset = TypedValue.applyDimension(1, DEFAULT_CORNER_OFFSET_DP, displayMetrics);
-        mCornerExtension = TypedValue.applyDimension(1, DEFAULT_CORNER_EXTENSION_DP, displayMetrics);
-        mCornerLength = TypedValue.applyDimension(1, 20.0F, displayMetrics);
+        mCornerOffset = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, DEFAULT_CORNER_OFFSET_DP, displayMetrics);
+        mCornerExtension = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, DEFAULT_CORNER_EXTENSION_DP, displayMetrics);
+        mCornerLength = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20.0F, displayMetrics);
         mGuidelines = 1;
     }
 

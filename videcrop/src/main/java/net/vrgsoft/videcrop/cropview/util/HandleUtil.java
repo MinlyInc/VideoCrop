@@ -91,7 +91,7 @@ public final class HandleUtil {
                     touchOffsetY = centerY - y;
             }
 
-            Pair<Float, Float> result = new Pair(touchOffsetX, touchOffsetY);
+            Pair<Float, Float> result = new Pair<>(touchOffsetX, touchOffsetY);
             return result;
         }
     }

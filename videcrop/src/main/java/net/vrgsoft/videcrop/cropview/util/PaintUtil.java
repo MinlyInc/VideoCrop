@@ -17,7 +17,7 @@ public final class PaintUtil {
     }
 
     public static Paint newBorderPaint(Context context) {
-        float lineThicknessPx = TypedValue.applyDimension(1, 3.0F, context.getResources().getDisplayMetrics());
+        float lineThicknessPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3.0F, context.getResources().getDisplayMetrics());
         Paint borderPaint = new Paint();
         borderPaint.setColor(Color.parseColor("#AAFFFFFF"));
         borderPaint.setStrokeWidth(lineThicknessPx);
@@ -39,7 +39,7 @@ public final class PaintUtil {
     }
 
     public static Paint newCornerPaint(Context context) {
-        float lineThicknessPx = TypedValue.applyDimension(1, 5.0F, context.getResources().getDisplayMetrics());
+        float lineThicknessPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5.0F, context.getResources().getDisplayMetrics());
         Paint cornerPaint = new Paint();
         cornerPaint.setColor(-1);
         cornerPaint.setStrokeWidth(lineThicknessPx);

@@ -1,1 +1,1 @@
-include ':app', ':videcrop'
+include ':videcrop'
